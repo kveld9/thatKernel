@@ -2,5 +2,5 @@ id=thatkernel
 name=</>thatKernel
 version=v0.0.5
 versioncode=005
-author=@kveld9 || t.me/rootart
-description=this is getting bored ): .
+author=https://codeberg.org/kveld9
+description=designed to suppress operating system and kernel logs and events as much as possible.
