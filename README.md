@@ -39,6 +39,8 @@ In this part empty binary files are installed to remove certain functionalities 
 
 ## 📲 Installation
 
+First, download this repo as a zip. Then:
+
 1. Open **Magisk or KernelSU or APatch, etc.**.
 2. Tap “Install from storage”.
 3. Select the `thatKernel.zip` file.
