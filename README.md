@@ -79,7 +79,7 @@ By uninstalling the module from the module manager you have, the whole system wi
 
 ## 🥰 Credits
 
-- [KingTweaks](https://github.com/King-Projects/King-Tweaks/blob/master/libktsr.sh) - Thanks for the nested loop where much of the debugging and kernel log generators are disabled. Line 83 of the file ---> [HERE](/system/bin/thatKernel).
+- [KingTweaks](https://github.com/King-Projects/King-Tweaks/blob/master/libktsr.sh) - Thanks for the nested loop where much of the debugging and kernel log generators are disabled. Line 83 of the file ---> [HERE](system/bin/thatKernel).
 - [MMT-Extended](https://github.com/Zackptg5/MMT-Extended/blob/master/uninstall.sh) - Thanks for the [uninstall.sh](uninstall.sh) file.
 
 ---
