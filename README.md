@@ -2,6 +2,11 @@
 
 Magisk module designed to suppress operating system and kernel logs and events as much as possible, reducing background resource usage and avoiding logs that may interfere with privacy (this point is up to everyone's thoughts about Android).
 
+
+![Magisk](https://img.shields.io/badge/Magisk-23%2B-brightgreen.svg)
+![Android](https://img.shields.io/badge/Android-8.1.0%2B-blue.svg)
+![License](https://img.shields.io/badge/License-GPLv3-orange.svg)
+
 ---
 
 ## 🚀 Functionality
