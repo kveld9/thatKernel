@@ -3,7 +3,7 @@
 [![Magisk](https://img.shields.io/badge/Magisk-20.4%2B-brightgreen.svg)](https://github.com/topjohnwu/Magisk)
 [![KernelSU](https://img.shields.io/badge/KernelSU-v0.7.0%2B-blue.svg)](https://github.com/tiann/KernelSU)
 [![KernelSU Next](https://img.shields.io/badge/KernelSU%20Next-v1.0.0%2B-blueviolet.svg)](https://github.com/rifsxd/KernelSU-Next)
-[![Android](https://img.shields.io/badge/Android-8.1--14%2B-blue.svg)](https://www.android.com/)
+[![Android](https://img.shields.io/badge/Android-8.1%2B-blue.svg)](https://www.android.com/)
 [![License](https://img.shields.io/badge/License-GPLv3-orange.svg)](LICENSE)
 
 A root module for **KernelSU**, **KernelSU Next**, **Magisk**, and **APatch** designed to safely suppress background operating system and kernel debug logging, tracing, ramdumps, and crash events.
