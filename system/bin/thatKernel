@@ -1,192 +1,72 @@
 #!/system/bin/sh
 
-# Execute script by tytydraco and his project ktweak, thanks! 
 write() {
-	# Bail out if file does not exist
-	[[ ! -f "$1" ]] && return 1
-	
-	# Make file writable in case it is not already
-	chmod +w "$1" 2> /dev/null
-
-	# Write the new value and bail if there's an error
-	if ! echo "$2" > "$1" 2> /dev/null
-	then
-		echo "Failed: $1 → $2"
-		return 1
-	fi
+    [ ! -f "$1" ] && return 1
+    chmod +w "$1" 2>/dev/null
+    if ! echo "$2" > "$1" 2>/dev/null; then
+        echo "Failed: $1 → $2"
+        return 1
+    fi
 }
 
-LOG_FILE="/storage/emulated/0/Android/thatKernel.log"
-CRC="/sys/module/mmc_core/parameters"
-SKERNEL="/sys/kernel"
-PSKERNEL="/proc/sys/kernel"
-MODULE="/sys/module"
-PROC="/proc/sys"
-RAMDUMPS="/sys/module/subsystem_restart/parameters"
-VM="/proc/sys/vm"
-QUEUE="/sys/block/*/queue"
+LOG_FILE="/data/adb/thatKernel.log"
 
-# calculating the total amount of ram
-TOTAL_RAM=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
-TOTAL_RAM_GB=$(echo "scale=2; $TOTAL_RAM / 1024 / 1024" | bc)
-if (( $(echo "$TOTAL_RAM_GB < 12.5 && $TOTAL_RAM_GB > 10.5" | bc -l) )); then
-  RAM=12
-elif (( $(echo "$TOTAL_RAM_GB < 16.5 && $TOTAL_RAM_GB > 13" | bc -l) )); then
-  RAM=16
-else
-  RAM=$(echo "$TOTAL_RAM_GB" | awk '{print ($0-int($0)>0)?int($0)+1:int($0)}')
-fi
-
-function LOG() {
-    local message="$1"
-    echo "$message" >> "$LOG_FILE"
+LOG() {
+    echo "$1" >> "$LOG_FILE"
 }
 
-function LOG_D() {
-    local current_date=$(date '+%Y-%m-%d - %H:%M:%S')
-    local message="$1"
-    echo "($current_date): $message" >> "$LOG_FILE"
+LOG_D() {
+    echo "($(date '+%Y-%m-%d - %H:%M:%S')): $1" >> "$LOG_FILE"
 }
 
 LOG "～～～～～～～～～～～～～～～～～～"
 LOG "- WELCOME TO </>thatKernel -"
-LOG "• v0.0.5"
-LOG "• Built at 2024/08/29."
-LOG "• by @kveld9 || t.me/rootart ."
-LOG "• DEVICE - $(getprop ro.product.brand) $(getprop ro.product.system.model)."
-LOG "• ROM - $(getprop ro.product.name)."
-LOG "• ANDROID - $(getprop ro.build.version.release)."
-LOG "• KERNEL - $(uname -r)."
-LOG "• RAM - $RAM GB."
+LOG "• v0.1.0"
+LOG "• DEVICE - $(getprop ro.product.brand) $(getprop ro.product.system.model)"
+LOG "• ROM - $(getprop ro.product.name)"
+LOG "• ANDROID - $(getprop ro.build.version.release)"
+LOG "• KERNEL - $(uname -r)"
 LOG "～～～～～～～～～～～～～～～～～～"
 
-LOG " "
-LOG "-------------------------------------"
-
-# Romanos 8:18.
-
-# killing services
-LOG_D "- Turning off services that generate logs and debugging..."
-for SERVICE in logcat logcatd logd logd.rc tcpdump cnss_diag statsd traced idd-logreader idd-logreadermain stats dumpstate aplogd vendor.tcpdump vendor_tcpdump vendor.cnss_diag; do
-  pid=$(pidof $SERVICE)
-  if [ -n "$pid" ]; then
-    kill -15 $pid
-    sleep 2
-    if kill -0 $pid 2>/dev/null; then
-      kill -9 $pid
-    fi
-  fi
+LOG_D "- Stopping background tracing and diagnostic daemons..."
+for service in statsd traced traced_probes cnss_diag vendor.cnss_diag tcpdump vendor.tcpdump dumpstate; do
+    stop "$service" 2>/dev/null
 done
-LOG_D "- Finished."
-LOG "-------------------------------------"
+LOG_D "- Finished stopping daemons."
 
-# killing debugging (thx to KTSR)
-LOG_D "- Disabling debugging, logging, crash logs, tracing, etc..."
-LOG " "
-for i in debug_mask log_level* debug_level* *debug_mode edac_mc_log* enable_event_log *log_level* *log_ue* *log_ce* log_ecn_error snapshot_crashdumper seclog* compat-log *log_enabled tracing_on mballoc_debug; do
-    for o in $(find /sys/ -type f -name "$i"); do
-        write "$o" 0 
-        LOG "· DISABLED -> "$o""
-    done
+LOG_D "- Disabling kernel tracing and debug nodes..."
+for node in \
+    /sys/kernel/tracing/tracing_on \
+    /sys/kernel/debug/tracing/tracing_on \
+    /sys/kernel/tracing/instances/*/tracing_on \
+    /sys/kernel/debug/dri/0/debug/enable \
+    /sys/kernel/debug/sde_rotator0/evtlog/enable; do
+    write "$node" 0
 done
-LOG " "
-LOG_D "- Finished."
-LOG "-------------------------------------"
 
-# killing more debugging
-LOG_D "- Disabling more debugging of the kernel..."
-if [ -f "$MODULE/spurious/parameters/noirqdebug" ]; then
-    write "$MODULE/spurious/parameters/noirqdebug" 1
-  else
-    LOG_D "---> /sys/module/spurious/parameters/noirqdebug doesn't exist."
-fi
-if [ -f "$SKERNEL/debug/sde_rotator0/evtlog/enable" ]; then
-    write "$SKERNEL/debug/sde_rotator0/evtlog/enable" 0
-  else
-    LOG_D "---> /sys/kernel/debug/sde_rotator0/evtlog/enable doesn't exist."
-fi
-if [ -f "$SKERNEL/debug/dri/0/debug/enable" ]; then
-    write "$SKERNEL/debug/dri/0/debug/enable" 0
-  else
-    LOG_D "---> /sys/kernel/debug/dri/0/debug/enable doesn't exist."
-fi
-if [ -f "$PSKERNEL/sched_schedstats" ]; then
-    write "$PSKERNEL/sched_schedstats" 0
-  else
-    LOG_D "---> /proc/sys/kernel/sched_schedstats doesn't exist."
-fi
-if [ -f "$PROC/debug/exception-trace" ]; then
-    write "$PROC/debug/exception-trace" 0
-  else
-    LOG_D "---> /proc/sys/debug/exception-trace doesn't exist."
-fi
-if [ -f "$PROC/net/ipv4/tcp_no_metrics_save" ]; then
-    write "$PROC/net/ipv4/tcp_no_metrics_save" 1
-  else
-    LOG_D "---> /proc/sys/net/ipv4/tcp_no_metrics_save doesn't exist."
-fi
-LOG_D "- Finished."
-LOG "-------------------------------------"
+write "/proc/sys/kernel/sched_schedstats" 0
+write "/proc/sys/debug/exception-trace" 0
+write "/proc/sys/net/ipv4/tcp_no_metrics_save" 1
+write "/sys/module/spurious/parameters/noirqdebug" 1
 
-# killing CRC
-if [ -d "$CRC" ]; then
-    LOG_D "- Disabling CRC..."
-    write "$CRC/crc" 0
-    write "$CRC/use_spi_crc" 0
-    LOG_D "- Finished."
-    LOG "-------------------------------------"
-  else
-    LOG_D "- CRC settings aren't available."
-    LOG "-------------------------------------"
-fi
+LOG_D "- Disabling printk and devkmsg..."
+write "/proc/sys/kernel/printk" "0 0 0 0"
+write "/proc/sys/kernel/printk_devkmsg" "off"
 
-# killing printk
-if [ -d "$PSKERNEL" ]; then
-    LOG_D "- Disabling Printk..."
-    write "$PSKERNEL/printk" 0 0 0 0
-    write "$PSKERNEL/printk_devkmsg" off
-    LOG_D "- Finished."
-    LOG "-------------------------------------"
-  else
-    LOG_D "- Printk settings aren't available."
-    LOG "-------------------------------------"
-fi
+LOG_D "- Disabling ramdumps..."
+write "/sys/module/subsystem_restart/parameters/enable_mini_ramdumps" 0
+write "/sys/module/subsystem_restart/parameters/enable_ramdumps" 0
+write "/sys/module/subsystem_restart/parameters/enable_debug" 0
 
-# killing ramdumps
-if [ -d "$RAMDUMPS" ]; then
-    LOG_D "- Disabling ramdumps..."
-    write "$RAMDUMPS/enable_mini_ramdumps" 0
-    write "$RAMDUMPS/enable_ramdumps" 0
-    LOG_D "- Finished."
-    LOG "-------------------------------------"
-  else
-    LOG_D "- Ramdumps settings aren't available."
-    LOG "-------------------------------------"
-fi
+LOG_D "- Disabling block I/O stats..."
+for q in /sys/block/*/queue/iostats; do
+    write "$q" 0
+done
 
-# killing iostats
-LOG_D "- Disabling I/O stats..."
-   for q in $QUEUE; do
-      write "$q/iostats" 0
-   done
-LOG_D "- Finished."
-LOG "-------------------------------------"
+LOG_D "- Disabling memory dumps..."
+write "/proc/sys/vm/oom_dump_tasks" 0
+write "/proc/sys/vm/block_dump" 0
 
-# killing memory dump
-if [ -d "$VM" ]; then
-    LOG_D "- Disabling memory dump..."
-    write "$VM/oom_dump_tasks" 0
-    write "$VM/block_dump" 0
-    LOG_D "- Finished."
-    LOG "-------------------------------------"
-  else
-    LOG_D "- Virtual Memory settings aren't available."
-    LOG "-------------------------------------"
-fi
-
-LOG
-LOG
-LOG
 LOG "～～～～～～～～～～～～～～～～～～～～～～～～～"
 LOG_D "</>thatKernel was successfully applied."
 LOG "～～～～～～～～～～～～～～～～～～～～～～～～～"

@@ -1,6 +1,6 @@
 id=thatkernel
 name=</>thatKernel
-version=v0.0.5
-versioncode=005
+version=v0.1.0
+versioncode=100
 author=https://codeberg.org/kveld9
-description=designed to suppress operating system and kernel logs and events as much as possible.
+description=Safely suppresses system and kernel debug logging, tracing, and ramdumps.

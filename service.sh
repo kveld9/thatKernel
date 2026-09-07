@@ -1,16 +1,10 @@
 #!/system/bin/sh
 
-while [[ "$(getprop sys.boot_completed)" -ne 1 ]] && [[ ! -d "/sdcard" ]]
-do
-   sleep 10
+while [ "$(getprop sys.boot_completed)" != "1" ]; do
+   sleep 2
 done
 
-sleep 60
-sync
-
-LOG_FILE="/storage/emulated/0/Android/thatKernel.log"
-if [ -e $LOG_FILE ]; then
-   rm -rf $LOG_FILE;
-fi
+# Allow boot services to settle before applying kernel tweaks
+sleep 15
 
 thatKernel
