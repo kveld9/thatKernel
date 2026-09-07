@@ -1,90 +1,62 @@
 # </>thatKernel
 
-Magisk module designed to suppress operating system and kernel logs and events as much as possible, reducing background resource usage and avoiding logs that may interfere with privacy (this point is up to everyone's thoughts about Android).
+[![Magisk](https://img.shields.io/badge/Magisk-20.4%2B-brightgreen.svg)](https://github.com/topjohnwu/Magisk)
+[![KernelSU](https://img.shields.io/badge/KernelSU-v0.7.0%2B-blue.svg)](https://github.com/tiann/KernelSU)
+[![KernelSU Next](https://img.shields.io/badge/KernelSU%20Next-v1.0.0%2B-blueviolet.svg)](https://github.com/rifsxd/KernelSU-Next)
+[![Android](https://img.shields.io/badge/Android-8.1--14%2B-blue.svg)](https://www.android.com/)
+[![License](https://img.shields.io/badge/License-GPLv3-orange.svg)](LICENSE)
 
-
-![Magisk](https://img.shields.io/badge/Magisk-20.4%2B-brightgreen.svg)
-![Android](https://img.shields.io/badge/Android-8.1.0%2B-blue.svg)
-![License](https://img.shields.io/badge/License-GPLv3-orange.svg)
+A root module for **KernelSU**, **KernelSU Next**, **Magisk**, and **APatch** designed to safely suppress background operating system and kernel debug logging, tracing, ramdumps, and crash events.
 
 ---
 
 ## 🚀 Functionality
 
-### 🔧 System Property Tweaks (`resetprop`)
-The `post-fs-data.sh` script changes several Android properties:
+### 🔧 System Property Tweaks (`post-fs-data.sh`)
+During early boot (`post-fs-data`), the module configures low-overhead system properties via `resetprop`:
 
-- **Tombstoned**:
-  - Disables generation of crash dump files (`tombstones`).
-- **Low Memory Killer (LMK)**:
-  - Disables debugging and logging.
-- **Dalvik/ART**:
-  - Disables bytecode verification.
-  - Disables dex checksums.
-  - Reduces debugging metadata.
-- **Multiuser**:
-  - Completely disables multiuser support.
-- **Blurs**:
-  - Disables all blur effects in the UI for performance.
-  - Especially useful on MIUI or HyperOS where blur is heavy.
+- **Tombstoned:** Limits crash dump file generation (`tombstoned.max_tombstone_count=0`).
+- **Low Memory Killer (LMK):** Disables LMK debug logging and stats gathering.
+- **Dalvik/ART:** Reduces debug information overhead (`minidebuginfo=false`, `checkjni=false`, `check-dex-sum=false`).
+- **UI Blur Optimization:** Disables window blur effects for improved rendering performance.
 
-### ⚙️ Custom System Binaries
-The module replaces system binaries in `system/bin/`, including:
+### 🔪 Kernel & Diagnostic Suppression (`system/bin/thatKernel`)
+Executed safely post-boot (`sys.boot_completed=1`) to eliminate continuous background tracing and logging without corrupting system binaries:
 
-- `atrace`
-- `bugreport`
-- `dalvikvm`
-- `dumpsys`
-- `logcat`
-- And others...
+- **Tracing & Debug Nodes:** Disables kernel tracing instances (`tracing_on=0`), DRM/KMS debugging, and rotator event logging.
+- **Kernel Printk & Devkmsg:** Suppresses console kernel messages (`printk "0 0 0 0"`) and disables `/dev/kmsg` logging (`printk_devkmsg=off`).
+- **Crash & Ramdumps:** Disables subsystem restart ramdumps and mini-ramdumps.
+- **Schedstats & Exception Tracing:** Turns off scheduler statistics and exception tracing overhead.
+- **I/O & Memory Dumps:** Silences block queue I/O statistics and OOM task memory dumps.
+- **Diagnostic Daemons:** Gracefully stops non-essential background tracing services (`statsd`, `traced`, `traced_probes`, `cnss_diag`, `tcpdump`) using `stop`.
 
-In this part empty binary files are installed to remove certain functionalities of the binaries related to debugging, events, logs, etc.
+---
 
-### 🔪 Main kernel functions disabled
+## 📜 Execution Log
 
-- `CRC`
-- `printk`
-- `ramdumps`
-- `iosatats`
-- `memory dump`
-- much more, take a look at line 69, 84 and 97 of the file ---> [thatKernel main](/system/bin/thatKernel).
+A detailed log of all tweaks applied by the module is saved to:
+```text
+/data/adb/thatKernel.log
+```
+This file is refreshed on every reboot once all tweaks have been successfully applied.
+
 ---
 
 ## 📲 Installation
 
-First, download latest version [HERE](https://codeberg.org/kveld9/thatKernel/releases/). Then:
-
-1. Open **Magisk or KernelSU or APatch, etc.**.
-2. Tap “Install from storage”.
-3. Select the `thatKernel.zip` file.
+1. Download the latest release `.zip` from [Releases](https://github.com/kveld9/thatKernel/releases/latest).
+2. Open your root manager app (**KernelSU Manager**, **Magisk**, or **APatch**).
+3. Select and flash the `thatKernel-v0.1.0.zip` file.
 4. Reboot your device.
-
----
-
-## 📜 Log file with the recorded behavior of the module
-
-In the path `/storage/emulated/0/Android/` a log file with the name `thatKernel.log` will be saved. This is regenerated on every reboot of the device noting every change the module made.
-
----
-
-## ⚠️ Warnings
-
-- **Experimental module:** May cause bootloops or instability.
-- **Recommended for advanced users only.**
-- If stuck in a bootloop, try delete `post-fs-data.sh` from recovery and reinstall.
-- Not recommended if you rely on features like multiuser or UI blur, or simply delete those lines from the file `post-fs-data.sh`.
 
 ---
 
 ## 🧹 Uninstallation
 
-By uninstalling the module from the module manager you have, the whole system will return to normal.
+Uninstall the module from your root manager app. On reboot, kernel printk defaults (`6 6 1 7`), `devkmsg`, and tracing are automatically restored, and module logs are cleaned up.
 
 ---
 
-## 🥰 Credits
+## 📄 License
 
-- [KingTweaks](https://github.com/King-Projects/King-Tweaks/blob/master/libktsr.sh) - Thanks for the nested loop where much of the debugging and kernel log generators are disabled. Line 83 of the file ---> [HERE](system/bin/thatKernel).
-- [MMT-Extended](https://github.com/Zackptg5/MMT-Extended/blob/master/uninstall.sh) - Thanks for the [uninstall.sh](uninstall.sh) file.
-
----
+GPL-3.0 License. See [LICENSE](LICENSE) for details.
